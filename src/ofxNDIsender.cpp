@@ -395,7 +395,7 @@ void ofxNDIsender::SetFormat(NDIlib_FourCC_video_type_e format)
 		// For YUV format, test existence of required rgba2yuv shader file
 		// Shaders can be in bin\data or bin\data\shaders
 		// Look for the shaders folder first
-		std::string shaderpath = ofToDataPath("shaders");
+		auto shaderpath = ofToDataPath("shaders");
 		if (ofDirectory::doesDirectoryExist(shaderpath, false)) {
 			// Look for the shader file
 			#ifdef TARGET_OPENGLES
