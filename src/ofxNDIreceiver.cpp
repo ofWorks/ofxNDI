@@ -638,7 +638,7 @@ bool ofxNDIreceiver::GetPixelData(ofTexture &texture)
 				// .frag and .vert are added by shader load
 				// Shaders can be in bin\data or bin\data\shaders
 				// Look for the shaders folder first
-				std::string shaderpath = ofToDataPath("shaders");
+				auto shaderpath = ofToDataPath("shaders");
 				if (ofDirectory::doesDirectoryExist(shaderpath, false)) {
 					#ifdef TARGET_OPENGLES
 					shaderpath = ofToDataPath("shaders/yuv2rgba/ES2/yuv2rgba");
