@@ -34,7 +34,11 @@
 #ifndef __ofxNDIsender__
 #define __ofxNDIsender__
 
-#include "ofMain.h"
+#include "ofTexture.h"
+#include "ofShader.h"
+#include "ofFbo.h"
+#include "ofImage.h"
+#include "ofGraphics.h"
 
 #if defined(TARGET_WIN32)
 #include <windows.h>
@@ -97,7 +101,7 @@ public:
 	// - tex     | Openframeworks texture to send
 	// - bInvert | flip the image - default false
 	bool SendImage(ofTexture tex, bool bInvert = false);
-	
+
 	// Send ofImage
 	// - image   | Openframeworks image to send
 	// - bInvert | flip the image - default false
@@ -170,7 +174,7 @@ public:
 	// Get whether progressive
 	bool GetProgressive();
 
-	// Set clocked 
+	// Set clocked
 	// Refer to NDI documentation
 	// (do not clock the video for async sending)
 	// Initialized true

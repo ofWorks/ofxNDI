@@ -27,9 +27,9 @@
 	08.07.16 - Uses ofxNDIreceive class
 	11.07.18 - Add ReceiveImage for a texture
 			 - Change to always create an RGBA receiver.
-			   Allow the SDK to do the conversion from other formats. 
+			   Allow the SDK to do the conversion from other formats.
 			   Openframeworks is RGBA so any other format would need
-			   to be converted in any case. 
+			   to be converted in any case.
 	16.07.18 - Add GetFrameType
 	06.08.18 - Add receive to ofFbo
 			 - Check for receiver creation in ReceiveImage to unsigned char array
@@ -57,7 +57,7 @@
 	30.10.21 - Add SetSenderName
 	02.12.21 - Use setFromPixels in Receive to ofPixels
 			   Ensure the NDI video buffer is freed on fail in GetPixelData()
-	04.01.22 - Add default case break for unsupported format 
+	04.01.22 - Add default case break for unsupported format
 			   for NDIreceiver.GetVideoType() in ReceiveImage(ofPixels
 	30.04.22 - Add missing SetAudio function.
 			   Add GetAudioChannels, GetAudioSamples, GetAudioSampleRate.
@@ -88,6 +88,7 @@
 
 */
 #include "ofxNDIreceiver.h"
+#include "ofFileUtils.h"
 
 ofxNDIreceiver::ofxNDIreceiver()
 {
@@ -97,7 +98,7 @@ ofxNDIreceiver::ofxNDIreceiver()
 
 ofxNDIreceiver::~ofxNDIreceiver()
 {
-	
+
 }
 
 // Create receiver if not initialized or a new sender has been selected
@@ -252,7 +253,7 @@ bool ofxNDIreceiver::ReceiveImage(ofImage &image)
 			// Allocate receiving UYVY texture
 			m_yuvtexture.allocate(width/2, height, GL_RGBA);
 		}
-		
+
 		// Get NDI pixel data from the video frame
 		return GetPixelData(image.getTexture());
 	}
@@ -594,7 +595,7 @@ int ofxNDIreceiver::GetFps()
 // Private functions
 //
 
-// Get NDI pixel data from the video frame to ofTexture 
+// Get NDI pixel data from the video frame to ofTexture
 bool ofxNDIreceiver::GetPixelData(ofTexture &texture)
 {
 
@@ -798,4 +799,3 @@ bool ofxNDIreceiver::LoadTexturePixels(GLuint TextureID, GLuint TextureTarget,
 	return true;
 
 }
-

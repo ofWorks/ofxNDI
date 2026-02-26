@@ -38,7 +38,7 @@
 			   ofFbo, ofTexture, ofPixels or pixel data mst be RGBA
 	04.12.19 - Revise for ARM port (https://github.com/IDArnhem/ofxNDI)
 			   Cleanup
-	13.12.19 - Temporary changes to disable pbo functions 
+	13.12.19 - Temporary changes to disable pbo functions
 			   to enable compile for Raspberry PI
 	27.02.20 - Restored PBO functions
 			   TODO disable using #ifdef TARGET_RASPBERRY_PI ?
@@ -107,6 +107,7 @@
 
 */
 #include "ofxNDIsender.h"
+#include "ofFileUtils.h"
 
 
 ofxNDIsender::ofxNDIsender()
@@ -123,7 +124,7 @@ ofxNDIsender::ofxNDIsender()
 #ifdef TARGET_OPENGLES
 	printf("TARGET_OPENGLES\n");
 #endif
-	
+
 #ifdef TARGET_LINUX_ARM
 	printf("TARGET_LINUX_ARM\n");
 #endif
@@ -248,7 +249,7 @@ unsigned int ofxNDIsender::GetWidth()
 }
 
 // Return current sender height
-unsigned int ofxNDIsender::GetHeight() 
+unsigned int ofxNDIsender::GetHeight()
 {
 	return NDIsender.GetHeight();
 }
@@ -332,7 +333,7 @@ bool ofxNDIsender::SendImage(ofImage &img, bool bSwapRB, bool bInvert)
 	// Not initialized of image not allocated
 	if (!NDIsender.SenderCreated() || !img.isAllocated())
 		return false;
-	
+
 	// RGBA for pixels
 	if (img.getImageType() != OF_IMAGE_COLOR_ALPHA) {
 		// Conversion from RGB to RGBA adds alpha 255 for each pixel
@@ -383,7 +384,7 @@ bool ofxNDIsender::SendImage(const unsigned char * pixels,
 		// Update class resources and NDI sender
 		UpdateSender(width, height);
 	}
-	
+
 	return NDIsender.SendImage(pixels, width, height, bSwapRB, bInvert);
 
 }
@@ -521,7 +522,7 @@ bool ofxNDIsender::GetProgressive()
 	return NDIsender.GetProgressive();
 }
 
-// Set clocked 
+// Set clocked
 void ofxNDIsender::SetClockVideo(bool bClocked)
 {
 	NDIsender.SetClockVideo(bClocked);
