@@ -117,33 +117,62 @@ void ofxNDIReceiver::update() {
 			texture.allocate(w, h, GL_RGBA);
 		}
 
+		// Copy frame data respecting stride
+		int srcStride = videoFrame.line_stride_in_bytes;
+		unsigned char* src = (unsigned char*)videoFrame.p_data;
+
 		// Handle different NDI pixel formats
-		// NDI gives us the format it chose based on our preference + what sender has
 		switch (videoFrame.FourCC) {
 			case NDIlib_FourCC_type_BGRA:
-				copyFrameToPixels(videoFrame, pixelBuffer);
-				pixelBuffer.swapRgb();
+				// BGRA → RGBA: copy with channel reorder
+				for (int y = 0; y < h; y++) {
+					unsigned char* srcRow = src + y * srcStride;
+					unsigned char* dstRow = pixelBuffer.getData() + y * w * 4;
+					for (int x = 0; x < w; x++) {
+						dstRow[x * 4 + 0] = srcRow[x * 4 + 2]; // R
+						dstRow[x * 4 + 1] = srcRow[x * 4 + 1]; // G
+						dstRow[x * 4 + 2] = srcRow[x * 4 + 0]; // B
+						dstRow[x * 4 + 3] = srcRow[x * 4 + 3]; // A
+					}
+				}
 				break;
 
 			case NDIlib_FourCC_type_BGRX:
-				copyFrameToPixels(videoFrame, pixelBuffer);
-				pixelBuffer.swapRgb();
-				// BGRX has no alpha, but after swapRgb we have RGBX
-				// ofPixels doesn't have a setAlpha(255), but GL_RGBA texture
-				// will show whatever is in the 4th channel. For BGRX the X
-				// byte is typically undefined/ignored. Let's leave it.
+				// BGRX → RGBA (set alpha to 255)
+				for (int y = 0; y < h; y++) {
+					unsigned char* srcRow = src + y * srcStride;
+					unsigned char* dstRow = pixelBuffer.getData() + y * w * 4;
+					for (int x = 0; x < w; x++) {
+						dstRow[x * 4 + 0] = srcRow[x * 4 + 2]; // R
+						dstRow[x * 4 + 1] = srcRow[x * 4 + 1]; // G
+						dstRow[x * 4 + 2] = srcRow[x * 4 + 0]; // B
+						dstRow[x * 4 + 3] = 255;               // A
+					}
+				}
 				break;
 
 			case NDIlib_FourCC_type_RGBA:
-				copyFrameToPixels(videoFrame, pixelBuffer);
+				// Straight copy
+				for (int y = 0; y < h; y++) {
+					memcpy(pixelBuffer.getData() + y * w * 4, src + y * srcStride, w * 4);
+				}
 				break;
 
 			case NDIlib_FourCC_type_RGBX:
-				copyFrameToPixels(videoFrame, pixelBuffer);
+				// RGBX → RGBA (set alpha to 255)
+				for (int y = 0; y < h; y++) {
+					unsigned char* srcRow = src + y * srcStride;
+					unsigned char* dstRow = pixelBuffer.getData() + y * w * 4;
+					for (int x = 0; x < w; x++) {
+						dstRow[x * 4 + 0] = srcRow[x * 4 + 0]; // R
+						dstRow[x * 4 + 1] = srcRow[x * 4 + 1]; // G
+						dstRow[x * 4 + 2] = srcRow[x * 4 + 2]; // B
+						dstRow[x * 4 + 3] = 255;               // A
+					}
+				}
 				break;
 
 			case NDIlib_FourCC_type_UYVY:
-				// UYVY 4:2:2 — needs YUV→RGBA conversion
 				ofLogWarning("ofxNDIReceiver") << "UYVY received — colors will be wrong until shader conversion is added";
 				copyFrameToPixels(videoFrame, pixelBuffer);
 				break;
@@ -249,7 +278,6 @@ void ofxNDIReceiver::refreshSenders() {
 
 	bool changed = (nSources != lastSourceCount);
 
-	// Also detect if names changed at same count
 	if (!changed && nSources > 0) {
 		if (nSources != senderNames.size()) {
 			changed = true;
@@ -285,9 +313,6 @@ bool ofxNDIReceiver::createReceiver(const NDIlib_source_t& source) {
 
 	NDIlib_recv_create_v3_t recvCreate = {};
 	recvCreate.source_to_connect_to = source;
-	// Request BGRA directly — most NDI sources send this natively
-	// NDIlib_recv_color_format_BGRX_BGRA means "prefer BGRX, fallback to BGRA"
-	// Value 0 = BGRX_BGRA which is the default / most compatible
 	recvCreate.color_format = NDIlib_recv_color_format_BGRX_BGRA;
 	recvCreate.bandwidth = NDIlib_recv_bandwidth_highest;
 	recvCreate.allow_video_fields = false;
@@ -321,11 +346,10 @@ void ofxNDIReceiver::copyFrameToPixels(const NDIlib_video_frame_v2_t& frame, ofP
 	int w = frame.xres;
 	int h = frame.yres;
 	int srcStride = frame.line_stride_in_bytes;
-	int dstStride = w * 4;
 	unsigned char* dst = pixels.getData();
 	unsigned char* src = (unsigned char*)frame.p_data;
 
 	for (int y = 0; y < h; y++) {
-		memcpy(dst + y * dstStride, src + y * srcStride, dstStride);
+		memcpy(dst + y * w * 4, src + y * srcStride, w * 4);
 	}
 }
