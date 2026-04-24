@@ -1,0 +1,93 @@
+name: example-receiver
+version: 0.3.3
+variables:
+  generator: ofGen
+  platform: macos
+  ofPath: ../../..
+  addons: ofxNDI
+abstracts:*:
+  language: C++
+  language[toolchain:apple-llvm]: Objective-C++
+  settings:Cxx:
+    cppStandard: c++20
+    warningsPreset: minimal
+    runtimeTypeInformation: true
+    threads: true
+    exceptions: true
+    defines[:macos]:
+      - __MACOSX_CORE__
+    defines[:debug]:
+      - DEBUG
+    linkerOptions[:macos]:
+      - -rpath @executable_path
+    compileOptions[:macos]:
+      - -fobjc-arc
+      - -mmacosx-version-min=12.0
+    includeDirs:
+      - ${var:ofPath}/libs/openFrameworks/*
+      - ${var:ofPath}/libs/{${var:platform}}/include
+      - ${var:ofPath}/libs/{${var:platform}}/include/freetype2
+      - ${var:ofPath}/addons/{${var:addons}}/src
+      - ${var:ofPath}/addons/{${var:addons}}/libs/NDI/include
+    libDirs:
+      - ${var:ofPath}/libs/{${var:platform}}/lib
+    links:
+      - ndi
+    appleFrameworks:
+      - Accelerate
+      - AGL
+      - ApplicationServices
+      - AVFoundation
+      - IOKit
+      - Cocoa
+      - CoreAudio
+      - CoreMedia
+      - OpenGL
+      - QuartzCore
+      - CoreMIDI
+    staticLinks:
+      - ${var:ofPath}/libs/openFrameworksCompiled/lib/${var:platform}/libopenFrameworks.a
+      - ${var:ofPath}/libs/{${var:platform}}/lib/libglew.a
+      - ${var:ofPath}/libs/{${var:platform}}/lib/libglfw3.a
+      - ${var:ofPath}/libs/{${var:platform}}/lib/libtess2.a
+      - ${var:ofPath}/libs/{${var:platform}}/lib/libFreeImage.a
+      - ${var:ofPath}/libs/{${var:platform}}/lib/libpng16.a
+      - ${var:ofPath}/libs/{${var:platform}}/lib/libglm.a
+      - ${var:ofPath}/libs/{${var:platform}}/lib/libfreetype.a
+      - ${var:ofPath}/libs/{${var:platform}}/lib/libbrotlidec.a
+      - ${var:ofPath}/libs/{${var:platform}}/lib/libbrotlicommon.a
+      - ${var:ofPath}/libs/{${var:platform}}/lib/liburiparser.a
+      - ${var:ofPath}/libs/{${var:platform}}/lib/libpugixml.a
+      - ${var:ofPath}/libs/{${var:platform}}/lib/librtaudio.a
+targets:
+  example-receiver:
+    kind: executable
+    files:
+      include:
+        - src/*.cpp
+      exclude:
+        - .DS_Store
+    copyFilesOnRun[:macos]: ${var:path}/bin/data
+distribution:
+  example-receiver:
+    kind: bundle
+    buildTargets: "*"
+    exclude:
+      - data/.gitkeep
+    macosBundle:
+      type: app
+      icon: ${var:ofPath}/libs/openFrameworksCompiled/project/macos/of.icns
+      infoPropertyList:
+        CFBundleDevelopmentRegion: en-US
+        CFBundleDisplayName: ${name}
+        CFBundleExecutable: ${mainExecutable}
+        CFBundleIconFile: ${icon}
+        CFBundleIdentifier: com.developer.application
+        CFBundleInfoDictionaryVersion: "6.0"
+        CFBundleName: ${bundleName}
+        CFBundlePackageType: APPL
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1.0.0"
+        CFBundleSignature: "????"
+        LSMinimumSystemVersion: "10.8"
+        NSHighResolutionCapable: true

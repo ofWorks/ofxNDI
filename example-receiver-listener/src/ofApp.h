@@ -12,4 +12,8 @@ public:
 	void exit();
 
 	ofxNDIReceiver receiver;
+
+	// Track sender list changes ourselves
+	std::vector<std::string> lastSenderNames;
+	bool sendersChanged = false;
 };

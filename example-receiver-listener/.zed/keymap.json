@@ -1,0 +1,12 @@
+[
+	{
+		"context": "Terminal || Workspace", // || EmptyPane || SharedScreen
+		"bindings": {
+			"ctrl-shift-b": "workspace::ToggleLeftDock",
+			"ctrl-cmd-right": [
+				"task::Spawn",
+				{ "task_name": "▶️ Run (chalet buildrun)" },
+			],
+		},
+	},
+]
