@@ -118,23 +118,33 @@ void ofxNDIReceiver::update() {
 		}
 
 		// Handle different NDI pixel formats
+		// NDI gives us the format it chose based on our preference + what sender has
 		switch (videoFrame.FourCC) {
 			case NDIlib_FourCC_type_BGRA:
-			case NDIlib_FourCC_type_BGRX:
 				copyFrameToPixels(videoFrame, pixelBuffer);
 				pixelBuffer.swapRgb();
 				break;
 
+			case NDIlib_FourCC_type_BGRX:
+				copyFrameToPixels(videoFrame, pixelBuffer);
+				pixelBuffer.swapRgb();
+				// BGRX has no alpha, but after swapRgb we have RGBX
+				// ofPixels doesn't have a setAlpha(255), but GL_RGBA texture
+				// will show whatever is in the 4th channel. For BGRX the X
+				// byte is typically undefined/ignored. Let's leave it.
+				break;
+
 			case NDIlib_FourCC_type_RGBA:
+				copyFrameToPixels(videoFrame, pixelBuffer);
+				break;
+
 			case NDIlib_FourCC_type_RGBX:
 				copyFrameToPixels(videoFrame, pixelBuffer);
 				break;
 
 			case NDIlib_FourCC_type_UYVY:
-				// UYVY 4:2:2 — needs conversion. For now, request BGRA from NDI
-				// and this case should rarely hit. If it does, we copy raw which
-				// will look wrong but won't crash.
-				ofLogWarning("ofxNDIReceiver") << "UYVY received but not converted — colors will be wrong";
+				// UYVY 4:2:2 — needs YUV→RGBA conversion
+				ofLogWarning("ofxNDIReceiver") << "UYVY received — colors will be wrong until shader conversion is added";
 				copyFrameToPixels(videoFrame, pixelBuffer);
 				break;
 
@@ -275,7 +285,9 @@ bool ofxNDIReceiver::createReceiver(const NDIlib_source_t& source) {
 
 	NDIlib_recv_create_v3_t recvCreate = {};
 	recvCreate.source_to_connect_to = source;
-	// Prefer BGRA directly so we don't need YUV conversion
+	// Request BGRA directly — most NDI sources send this natively
+	// NDIlib_recv_color_format_BGRX_BGRA means "prefer BGRX, fallback to BGRA"
+	// Value 0 = BGRX_BGRA which is the default / most compatible
 	recvCreate.color_format = NDIlib_recv_color_format_BGRX_BGRA;
 	recvCreate.bandwidth = NDIlib_recv_bandwidth_highest;
 	recvCreate.allow_video_fields = false;

@@ -11,36 +11,9 @@ void ofApp::setup() {
 
 void ofApp::update() {
 	receiver.update();
-
-	// Detect sender list changes
-	auto count = receiver.getSenderCount();
-	bool changed = (count != lastSenderNames.size());
-
-	if (!changed) {
-		for (size_t i = 0; i < count; i++) {
-			if (receiver.getSenderName(i) != lastSenderNames[i]) {
-				changed = true;
-				break;
-			}
-		}
-	}
-
-	if (changed) {
-		lastSenderNames.clear();
-		for (size_t i = 0; i < count; i++) {
-			lastSenderNames.push_back(receiver.getSenderName(i));
-		}
-		sendersChanged = true;
-
-		ofLogNotice("ofApp") << "=== Sender list changed ===";
-		for (size_t i = 0; i < lastSenderNames.size(); i++) {
-			ofLogNotice("ofApp") << "  [" << i << "] " << lastSenderNames[i];
-		}
-	}
 }
 
 void ofApp::draw() {
-	// Draw received texture centered and scaled to fit
 	if (receiver.isConnected()) {
 		float texW = receiver.getWidth();
 		float texH = receiver.getHeight();
@@ -59,7 +32,6 @@ void ofApp::draw() {
 		ofDrawBitmapString("Waiting for NDI source...", 20, 30);
 	}
 
-	// Info overlay
 	ofSetColor(255);
 	std::string info = "Sources: " + ofToString(receiver.getSenderCount());
 	if (receiver.isConnected()) {
@@ -68,14 +40,12 @@ void ofApp::draw() {
 	}
 	ofDrawBitmapString(info, 20, ofGetHeight() - 40);
 
-	// Show change indicator
 	if (sendersChanged) {
 		ofSetColor(0, 255, 0);
 		ofDrawBitmapString("SENDER LIST CHANGED", 20, ofGetHeight() - 20);
-		sendersChanged = false; // clear after one frame
+		sendersChanged = false;
 	}
 
-	// Draw sender list
 	ofSetColor(255);
 	int y = 60;
 	ofDrawBitmapString("Available sources:", 20, y);
