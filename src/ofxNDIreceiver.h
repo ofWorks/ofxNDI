@@ -37,7 +37,6 @@ public:
 	std::string getSenderName(size_t index) const;
 
 	// Switch to a different sender by name or index.
-	// Returns true if the switch will happen (may need a frame to reconnect).
 	bool connect(const std::string& senderName);
 	bool connect(size_t index);
 
@@ -53,7 +52,6 @@ private:
 	ofPixels pixelBuffer;
 
 	std::vector<std::string> senderNames;
-	std::vector<NDIlib_source_t> senderSources;
 	std::string currentSenderName;
 	std::string pendingSenderName;
 
@@ -64,5 +62,4 @@ private:
 	void refreshSenders();
 	bool createReceiver(const NDIlib_source_t& source);
 	void releaseReceiver();
-	void copyFrameToPixels(const NDIlib_video_frame_v2_t& frame, ofPixels& pixels);
 };

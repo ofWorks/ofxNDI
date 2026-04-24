@@ -45,7 +45,7 @@ bool ofxNDIReceiver::setup(const std::string& preferredSender) {
 				}
 			}
 		}
-		createReceiver(senderSources[idx]);
+		connect(idx);
 	}
 
 	return true;
@@ -68,7 +68,6 @@ void ofxNDIReceiver::close() {
 	connected = false;
 	lastSourceCount = 0;
 	senderNames.clear();
-	senderSources.clear();
 	currentSenderName.clear();
 	pendingSenderName.clear();
 
@@ -81,20 +80,22 @@ void ofxNDIReceiver::update() {
 
 	refreshSenders();
 
+	// Handle pending sender name (set by connect() when name not yet found)
 	if (!pendingSenderName.empty() && pendingSenderName != currentSenderName) {
 		for (size_t i = 0; i < senderNames.size(); i++) {
 			if (senderNames[i] == pendingSenderName) {
-				createReceiver(senderSources[i]);
-				pendingSenderName.clear();
+				connect(i);
 				break;
 			}
 		}
 	}
 
+	// Auto-connect to first sender if nothing connected
+	if (!receiver && !senderNames.empty()) {
+		connect(0);
+	}
+
 	if (!receiver) {
-		if (!senderNames.empty()) {
-			createReceiver(senderSources[0]);
-		}
 		return;
 	}
 
@@ -117,69 +118,67 @@ void ofxNDIReceiver::update() {
 			texture.allocate(w, h, GL_RGBA);
 		}
 
-		// Copy frame data respecting stride
 		int srcStride = videoFrame.line_stride_in_bytes;
 		unsigned char* src = (unsigned char*)videoFrame.p_data;
 
-		// Handle different NDI pixel formats
 		switch (videoFrame.FourCC) {
 			case NDIlib_FourCC_type_BGRA:
-				// BGRA → RGBA: copy with channel reorder
 				for (int y = 0; y < h; y++) {
 					unsigned char* srcRow = src + y * srcStride;
 					unsigned char* dstRow = pixelBuffer.getData() + y * w * 4;
 					for (int x = 0; x < w; x++) {
-						dstRow[x * 4 + 0] = srcRow[x * 4 + 2]; // R
-						dstRow[x * 4 + 1] = srcRow[x * 4 + 1]; // G
-						dstRow[x * 4 + 2] = srcRow[x * 4 + 0]; // B
-						dstRow[x * 4 + 3] = srcRow[x * 4 + 3]; // A
+						dstRow[x * 4 + 0] = srcRow[x * 4 + 2];
+						dstRow[x * 4 + 1] = srcRow[x * 4 + 1];
+						dstRow[x * 4 + 2] = srcRow[x * 4 + 0];
+						dstRow[x * 4 + 3] = srcRow[x * 4 + 3];
 					}
 				}
 				break;
 
 			case NDIlib_FourCC_type_BGRX:
-				// BGRX → RGBA (set alpha to 255)
 				for (int y = 0; y < h; y++) {
 					unsigned char* srcRow = src + y * srcStride;
 					unsigned char* dstRow = pixelBuffer.getData() + y * w * 4;
 					for (int x = 0; x < w; x++) {
-						dstRow[x * 4 + 0] = srcRow[x * 4 + 2]; // R
-						dstRow[x * 4 + 1] = srcRow[x * 4 + 1]; // G
-						dstRow[x * 4 + 2] = srcRow[x * 4 + 0]; // B
-						dstRow[x * 4 + 3] = 255;               // A
+						dstRow[x * 4 + 0] = srcRow[x * 4 + 2];
+						dstRow[x * 4 + 1] = srcRow[x * 4 + 1];
+						dstRow[x * 4 + 2] = srcRow[x * 4 + 0];
+						dstRow[x * 4 + 3] = 255;
 					}
 				}
 				break;
 
 			case NDIlib_FourCC_type_RGBA:
-				// Straight copy
 				for (int y = 0; y < h; y++) {
 					memcpy(pixelBuffer.getData() + y * w * 4, src + y * srcStride, w * 4);
 				}
 				break;
 
 			case NDIlib_FourCC_type_RGBX:
-				// RGBX → RGBA (set alpha to 255)
 				for (int y = 0; y < h; y++) {
 					unsigned char* srcRow = src + y * srcStride;
 					unsigned char* dstRow = pixelBuffer.getData() + y * w * 4;
 					for (int x = 0; x < w; x++) {
-						dstRow[x * 4 + 0] = srcRow[x * 4 + 0]; // R
-						dstRow[x * 4 + 1] = srcRow[x * 4 + 1]; // G
-						dstRow[x * 4 + 2] = srcRow[x * 4 + 2]; // B
-						dstRow[x * 4 + 3] = 255;               // A
+						dstRow[x * 4 + 0] = srcRow[x * 4 + 0];
+						dstRow[x * 4 + 1] = srcRow[x * 4 + 1];
+						dstRow[x * 4 + 2] = srcRow[x * 4 + 2];
+						dstRow[x * 4 + 3] = 255;
 					}
 				}
 				break;
 
 			case NDIlib_FourCC_type_UYVY:
-				ofLogWarning("ofxNDIReceiver") << "UYVY received — colors will be wrong until shader conversion is added";
-				copyFrameToPixels(videoFrame, pixelBuffer);
+				ofLogWarning("ofxNDIReceiver") << "UYVY received — colors will be wrong";
+				for (int y = 0; y < h; y++) {
+					memcpy(pixelBuffer.getData() + y * w * 4, src + y * srcStride, w * 4);
+				}
 				break;
 
 			default:
 				ofLogWarning("ofxNDIReceiver") << "Unhandled FourCC: " << videoFrame.FourCC;
-				copyFrameToPixels(videoFrame, pixelBuffer);
+				for (int y = 0; y < h; y++) {
+					memcpy(pixelBuffer.getData() + y * w * 4, src + y * srcStride, w * 4);
+				}
 				break;
 		}
 
@@ -187,7 +186,7 @@ void ofxNDIReceiver::update() {
 		ndiLib->recv_free_video_v2(receiver, &videoFrame);
 
 	} else if (frameType == NDIlib_frame_type_none) {
-		// No frame available this cycle — normal
+		// No frame this cycle
 	}
 
 	if (frameType == NDIlib_frame_type_audio && audioFrame.p_data) {
@@ -245,23 +244,38 @@ std::string ofxNDIReceiver::getSenderName(size_t index) const {
 bool ofxNDIReceiver::connect(const std::string& senderName) {
 	if (!initialized) return false;
 
-	if (senderName == currentSenderName && receiver) {
-		return true;
-	}
-
+	// Find the sender in current list
 	for (size_t i = 0; i < senderNames.size(); i++) {
 		if (senderNames[i] == senderName) {
-			return createReceiver(senderSources[i]);
+			return connect(i);
 		}
 	}
 
+	// Not found yet — remember for later discovery
 	pendingSenderName = senderName;
 	return false;
 }
 
 bool ofxNDIReceiver::connect(size_t index) {
-	if (!initialized || index >= senderSources.size()) return false;
-	return createReceiver(senderSources[index]);
+	if (!initialized || index >= senderNames.size()) return false;
+
+	std::string name = senderNames[index];
+
+	// If already connected to this sender, nothing to do
+	if (name == currentSenderName && receiver) {
+		return true;
+	}
+
+	// Create a fresh NDIlib_source_t with our own persistent string
+	NDIlib_source_t source;
+	source.p_ndi_name = name.c_str();
+	source.p_url_address = nullptr;
+
+	bool ok = createReceiver(source);
+	if (ok) {
+		pendingSenderName.clear();
+	}
+	return ok;
 }
 
 std::string ofxNDIReceiver::getCurrentSenderName() const {
@@ -295,12 +309,10 @@ void ofxNDIReceiver::refreshSenders() {
 	if (changed) {
 		lastSourceCount = nSources;
 		senderNames.clear();
-		senderSources.clear();
 
 		for (uint32_t i = 0; i < nSources; i++) {
 			if (sources[i].p_ndi_name) {
 				senderNames.emplace_back(sources[i].p_ndi_name);
-				senderSources.push_back(sources[i]);
 			}
 		}
 
@@ -340,16 +352,4 @@ void ofxNDIReceiver::releaseReceiver() {
 	}
 	connected = false;
 	currentSenderName.clear();
-}
-
-void ofxNDIReceiver::copyFrameToPixels(const NDIlib_video_frame_v2_t& frame, ofPixels& pixels) {
-	int w = frame.xres;
-	int h = frame.yres;
-	int srcStride = frame.line_stride_in_bytes;
-	unsigned char* dst = pixels.getData();
-	unsigned char* src = (unsigned char*)frame.p_data;
-
-	for (int y = 0; y < h; y++) {
-		memcpy(dst + y * w * 4, src + y * srcStride, w * 4);
-	}
 }
