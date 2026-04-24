@@ -38,7 +38,7 @@
 			   ofFbo, ofTexture, ofPixels or pixel data mst be RGBA
 	04.12.19 - Revise for ARM port (https://github.com/IDArnhem/ofxNDI)
 			   Cleanup
-	13.12.19 - Temporary changes to disable pbo functions 
+	13.12.19 - Temporary changes to disable pbo functions
 			   to enable compile for Raspberry PI
 	27.02.20 - Restored PBO functions
 			   TODO disable using #ifdef TARGET_RASPBERRY_PI ?
@@ -110,6 +110,7 @@
 
 */
 #include "ofxNDIsender.h"
+#include "ofFileUtils.h"
 
 
 ofxNDIsender::ofxNDIsender()
@@ -126,7 +127,7 @@ ofxNDIsender::ofxNDIsender()
 #ifdef TARGET_OPENGLES
 	printf("TARGET_OPENGLES\n");
 #endif
-	
+
 #ifdef TARGET_LINUX_ARM
 	printf("TARGET_LINUX_ARM\n");
 #endif
@@ -251,7 +252,7 @@ unsigned int ofxNDIsender::GetWidth()
 }
 
 // Return current sender height
-unsigned int ofxNDIsender::GetHeight() 
+unsigned int ofxNDIsender::GetHeight()
 {
 	return NDIsender.GetHeight();
 }
@@ -335,7 +336,7 @@ bool ofxNDIsender::SendImage(ofImage &img, bool bSwapRB, bool bInvert)
 	// Not initialized of image not allocated
 	if (!NDIsender.SenderCreated() || !img.isAllocated())
 		return false;
-	
+
 	// RGBA for pixels
 	if (img.getImageType() != OF_IMAGE_COLOR_ALPHA) {
 		// Conversion from RGB to RGBA adds alpha 255 for each pixel
@@ -386,7 +387,7 @@ bool ofxNDIsender::SendImage(const unsigned char * pixels,
 		// Update class resources and NDI sender
 		UpdateSender(width, height);
 	}
-	
+
 	return NDIsender.SendImage(pixels, width, height, bSwapRB, bInvert);
 
 }
@@ -398,7 +399,7 @@ void ofxNDIsender::SetFormat(NDIlib_FourCC_video_type_e format)
 		// For YUV format, test existence of required rgba2yuv shader file
 		// Shaders can be in bin\data or bin\data\shaders
 		// Look for the shaders folder first
-		std::string shaderpath = ofToDataPath("shaders");
+		auto shaderpath = ofToDataPath("shaders");
 		if (ofDirectory::doesDirectoryExist(shaderpath, false)) {
 			// Look for the shader file
 			#ifdef TARGET_OPENGLES
@@ -524,7 +525,11 @@ bool ofxNDIsender::GetProgressive()
 	return NDIsender.GetProgressive();
 }
 
+<<<<<<< HEAD
 // Set clocked video
+=======
+// Set clocked
+>>>>>>> master
 void ofxNDIsender::SetClockVideo(bool bClocked)
 {
 	NDIsender.SetClockVideo(bClocked);
@@ -803,7 +808,7 @@ bool ofxNDIsender::ReadYUVpixels(ofTexture &tex, unsigned int halfwidth, unsigne
 		// .frag and .vert are added by shader load
 		// Shaders can be in bin\data or bin\data\shaders
 		// Look for the shaders folder first
-		std::string shaderpath = ofToDataPath("shaders");
+		auto shaderpath = ofToDataPath("shaders");
 		if (ofDirectory::doesDirectoryExist(shaderpath, false)) {
 			#ifdef TARGET_OPENGLES
 			shaderpath = ofToDataPath("shaders/rgba2yuv/ES2/rgba2yuv");

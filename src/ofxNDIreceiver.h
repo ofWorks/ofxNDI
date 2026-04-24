@@ -36,7 +36,11 @@
 #ifndef __ofxNDIreceiver__
 #define __ofxNDIreceiver__
 
-#include "ofMain.h"
+#include "ofTexture.h"
+#include "ofShader.h"
+#include "ofFbo.h"
+#include "ofImage.h"
+#include "ofGraphics.h"
 
 #if defined(TARGET_WIN32)
     #include <windows.h>
@@ -214,10 +218,10 @@ public:
 
 	// Number of audio channels
 	int GetAudioChannels();
-	
+
 	// Number of audio samples
 	int GetAudioSamples();
-	
+
 	// Audio sample rate
 	int GetAudioSampleRate();
 
@@ -242,8 +246,8 @@ public:
 private :
 
 	bool GetPixelData(ofTexture &texture);
-	bool LoadTexturePixels(GLuint TextureID, GLuint TextureTarget, 
-		unsigned int width, unsigned int height, 
+	bool LoadTexturePixels(GLuint TextureID, GLuint TextureTarget,
+		unsigned int width, unsigned int height,
 		const unsigned char* data, int GLformat = GL_BGRA);
 	GLuint m_pbo[3]{}; // PBOs used for asynchronous pixel load
 	int PboIndex = 0; // Index used for pbo
