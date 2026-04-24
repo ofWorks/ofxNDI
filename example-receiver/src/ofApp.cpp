@@ -242,6 +242,7 @@ void ofApp::ShowInfo() {
 
 	std::string str;
 	int nsenders = ndiReceiver.GetSenderCount();
+	
 	if (nsenders > 0) {
 		if (ndiReceiver.ReceiverCreated()) {
 			if (ndiReceiver.ReceiverConnected()) {

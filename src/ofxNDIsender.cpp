@@ -525,11 +525,7 @@ bool ofxNDIsender::GetProgressive()
 	return NDIsender.GetProgressive();
 }
 
-<<<<<<< HEAD
 // Set clocked video
-=======
-// Set clocked
->>>>>>> master
 void ofxNDIsender::SetClockVideo(bool bClocked)
 {
 	NDIsender.SetClockVideo(bClocked);
