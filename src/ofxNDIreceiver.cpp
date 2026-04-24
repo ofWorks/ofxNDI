@@ -275,7 +275,6 @@ bool ofxNDIreceiver::ReceiveImage(ofImage &image)
 			// Allocate receiving UYVY texture
 			m_yuvtexture.allocate(width/2, height, GL_RGBA);
 		}
-<<<<<<< HEAD
 		else {
 			// Check for allocation
 			if (!image.isAllocated())
@@ -286,9 +285,6 @@ bool ofxNDIreceiver::ReceiveImage(ofImage &image)
 				ndiFbo.allocate(width, height, GL_RGBA);
 		}
 		
-=======
-
->>>>>>> master
 		// Get NDI pixel data from the video frame
 		return GetPixelData(image.getTexture());
 	}
