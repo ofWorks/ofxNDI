@@ -180,6 +180,10 @@ targets:
     settings:Cxx:
       staticLinks:
         - ofWorks
+      links:
+        - ndi
+      libDirs:
+        - /usr/local/lib
       includeDirs:
         - ${var:ofPath}/libs/openFrameworks
         - src
