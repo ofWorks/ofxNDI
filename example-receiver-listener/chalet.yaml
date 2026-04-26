@@ -78,6 +78,10 @@ abstracts:*:
       - CoreMedia
       - OpenGL
       - QuartzCore
+    links[:macos]:
+      - ndi
+    libDirs[:macos]:
+      - /usr/local/lib
     links[:linux]:
       - wayland-client
       - wayland-cursor

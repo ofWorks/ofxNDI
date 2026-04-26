@@ -54,10 +54,14 @@ private:
 	std::vector<std::string> senderNames;
 	std::string currentSenderName;
 	std::string pendingSenderName;
+	std::string connectedSourceName; // persistent storage for NDI source name pointer
 
 	bool initialized = false;
 	bool connected = false;
 	uint32_t lastSourceCount = 0;
+	NDIlib_FourCC_video_type_e lastReceivedFourCC = (NDIlib_FourCC_video_type_e)0;
+	uint64_t lastRefreshTime = 0;
+	static constexpr uint64_t REFRESH_INTERVAL_MS = 500; // poll sender list twice per second
 
 	void refreshSenders();
 	bool createReceiver(const NDIlib_source_t& source);
