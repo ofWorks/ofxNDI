@@ -25,8 +25,13 @@ common:
 	ADDON_INCLUDES += libs/NDI/include
 	ADDON_INCLUDES += src
 
-osx:
-	ADDON_LDFLAGS = -rpath @executable_path -lndi
+# osx:
+#	ADDON_LDFLAGS = -L/usr/local/lib -lndi
+#	ADDON_LDFLAGS += -Wl,-rpath,/usr/local/lib
+
+macos:
+	ADDON_LDFLAGS = -L/usr/local/lib -lndi
+	ADDON_LDFLAGS += -Wl,-rpath,/usr/local/lib
 
 linux64:
 	ADDON_LDFLAGS = -lndi

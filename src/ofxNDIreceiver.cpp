@@ -332,6 +332,13 @@ std::string ofxNDIReceiver::getCurrentSenderName() const {
 	return currentSenderName;
 }
 
+std::string ofxNDIReceiver::getNDIVersion() const {
+	if (ndiLib) {
+		return ndiLib->version();
+	}
+	return "";
+}
+
 // --- Private ---
 
 void ofxNDIReceiver::refreshSenders() {
@@ -377,6 +384,8 @@ void ofxNDIReceiver::refreshSenders() {
 		for (size_t i = 0; i < senderNames.size(); i++) {
 			ofLogNotice("ofxNDIReceiver") << "  [" << i << "] " << senderNames[i];
 		}
+
+		ofNotifyEvent(onSenderListChanged, senderNames, this);
 	}
 }
 

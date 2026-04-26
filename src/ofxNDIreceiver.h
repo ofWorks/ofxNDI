@@ -5,6 +5,9 @@
 
 class ofxNDIReceiver {
 public:
+	// Event fired when the sender list changes (new sender, removed sender, or renamed).
+	// The vector contains the current list of sender names.
+	ofEvent<std::vector<std::string>> onSenderListChanged;
 	ofxNDIReceiver();
 	~ofxNDIReceiver();
 
@@ -42,6 +45,9 @@ public:
 
 	// Current sender name
 	std::string getCurrentSenderName() const;
+
+	// NDI SDK version string (e.g. "NDI SDK 6.3.1")
+	std::string getNDIVersion() const;
 
 private:
 	const NDIlib_v6* ndiLib = nullptr;

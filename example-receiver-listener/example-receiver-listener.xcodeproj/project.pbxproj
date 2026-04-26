@@ -480,7 +480,9 @@
 				],
 				"OTHER_LDFLAGS": [
 					"$(OF_CORE_LIBS)",
-					"$(OF_CORE_FRAMEWORKS)"
+					"$(OF_CORE_FRAMEWORKS)",
+					"-L/usr/local/lib -lndi",
+					"-Wl,-rpath,/usr/local/lib"
 				]
 			},
 			"isa": "XCBuildConfiguration",
@@ -505,7 +507,9 @@
 				],
 				"OTHER_LDFLAGS": [
 					"$(OF_CORE_LIBS)",
-					"$(OF_CORE_FRAMEWORKS)"
+					"$(OF_CORE_FRAMEWORKS)",
+					"-L/usr/local/lib -lndi",
+					"-Wl,-rpath,/usr/local/lib"
 				]
 			},
 			"isa": "XCBuildConfiguration",

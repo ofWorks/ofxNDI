@@ -5,7 +5,7 @@ variables:
   platform: macos
   ofPath: ../../..
   addons: ProjectSourceFiles_example-receiver-listener,ofxNDI
-  time: 20260424-2329
+  time: 20260426-1811
 abstracts:*:
   language: C++
   language[toolchain:apple-llvm]: Objective-C++
@@ -78,10 +78,6 @@ abstracts:*:
       - CoreMedia
       - OpenGL
       - QuartzCore
-    links[:macos]:
-      - ndi
-    libDirs[:macos]:
-      - /usr/local/lib
     links[:linux]:
       - wayland-client
       - wayland-cursor
@@ -184,10 +180,6 @@ targets:
     settings:Cxx:
       staticLinks:
         - ofWorks
-      links:
-        - ndi
-      libDirs:
-        - /usr/local/lib
       includeDirs:
         - ${var:ofPath}/libs/openFrameworks
         - src
@@ -199,6 +191,10 @@ targets:
         - ${var:ofPath}/addons/ofxNDI/libs/NDI/bin/vs
         - ${var:ofPath}/addons/ofxNDI/libs/NDI/include
         - ${var:ofPath}/addons/ofxNDI/src
+      linkerOptions:
+        - -L/usr/local/lib
+        - -lndi
+        - -Wl,-rpath,/usr/local/lib
     files:
       include:
         - src/main.cpp
