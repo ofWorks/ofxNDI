@@ -1,22 +1,22 @@
-#include "ofxNDISender.h"
+#include "ofxNDIsender.h"
 
-ofxNDISender::ofxNDISender() = default;
+ofxNDIsender::ofxNDIsender() = default;
 
-ofxNDISender::~ofxNDISender() {
+ofxNDIsender::~ofxNDIsender() {
 	close();
 }
 
-bool ofxNDISender::setup(const std::string& senderName) {
+bool ofxNDIsender::setup(const std::string& senderName) {
 	if (initialized) return true;
 
 	ndiLib = NDIlib_v6_load();
 	if (!ndiLib) {
-		ofLogError("ofxNDISender") << "Failed to load NDI library";
+		ofLogError("ofxNDIsender") << "Failed to load NDI library";
 		return false;
 	}
 
 	if (!ndiLib->initialize()) {
-		ofLogError("ofxNDISender") << "NDI initialization failed";
+		ofLogError("ofxNDIsender") << "NDI initialization failed";
 		ndiLib = nullptr;
 		return false;
 	}
@@ -29,7 +29,7 @@ bool ofxNDISender::setup(const std::string& senderName) {
 
 	sender = ndiLib->send_create(&sendCreate);
 	if (!sender) {
-		ofLogError("ofxNDISender") << "Failed to create sender: " << senderName;
+		ofLogError("ofxNDIsender") << "Failed to create sender: " << senderName;
 		ndiLib->destroy();
 		ndiLib = nullptr;
 		return false;
@@ -40,7 +40,7 @@ bool ofxNDISender::setup(const std::string& senderName) {
 	return true;
 }
 
-void ofxNDISender::close() {
+void ofxNDIsender::close() {
 	if (ndiLib && sender) {
 		ndiLib->send_destroy(sender);
 		sender = nullptr;
@@ -55,7 +55,7 @@ void ofxNDISender::close() {
 	height = 0;
 }
 
-bool ofxNDISender::send(const ofTexture& tex) {
+bool ofxNDIsender::send(const ofTexture& tex) {
 	if (!initialized) return false;
 
 	int w = tex.getWidth();
@@ -71,7 +71,7 @@ bool ofxNDISender::send(const ofTexture& tex) {
 	return sendFrame(pixelBuffer.getData(), w, h);
 }
 
-bool ofxNDISender::send(const ofFbo& fbo) {
+bool ofxNDIsender::send(const ofFbo& fbo) {
 	if (!initialized) return false;
 
 	int w = fbo.getWidth();
@@ -87,7 +87,7 @@ bool ofxNDISender::send(const ofFbo& fbo) {
 	return sendFrame(pixelBuffer.getData(), w, h);
 }
 
-bool ofxNDISender::send(const ofImage& img) {
+bool ofxNDIsender::send(const ofImage& img) {
 	if (!initialized) return false;
 
 	const ofPixels& pix = img.getPixels();
@@ -107,7 +107,7 @@ bool ofxNDISender::send(const ofImage& img) {
 	}
 }
 
-bool ofxNDISender::send(const ofPixels& pix) {
+bool ofxNDIsender::send(const ofPixels& pix) {
 	if (!initialized) return false;
 
 	int w = pix.getWidth();
@@ -126,22 +126,29 @@ bool ofxNDISender::send(const ofPixels& pix) {
 	}
 }
 
-bool ofxNDISender::send(const unsigned char* pixels, int w, int h) {
+bool ofxNDIsender::send(const unsigned char* pixels, int w, int h) {
 	if (!initialized || !pixels) return false;
 	return sendFrame(pixels, w, h);
 }
 
-bool ofxNDISender::isInitialized() const {
+bool ofxNDIsender::isInitialized() const {
 	return initialized;
 }
 
-std::string ofxNDISender::getName() const {
+std::string ofxNDIsender::getName() const {
 	return name;
+}
+
+std::string ofxNDIsender::getNDIVersion() const {
+	if (ndiLib) {
+		return ndiLib->version();
+	}
+	return "";
 }
 
 // --- Private ---
 
-bool ofxNDISender::sendFrame(const unsigned char* rgbaPixels, int w, int h) {
+bool ofxNDIsender::sendFrame(const unsigned char* rgbaPixels, int w, int h) {
 	NDIlib_video_frame_v2_t videoFrame = {};
 	videoFrame.xres = w;
 	videoFrame.yres = h;

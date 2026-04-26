@@ -1,4 +1,4 @@
 #pragma once
 
-#include "ofxNDIReceiver.h"
-#include "ofxNDISender.h"
+#include "ofxNDIreceiver.h"
+#include "ofxNDIsender.h"

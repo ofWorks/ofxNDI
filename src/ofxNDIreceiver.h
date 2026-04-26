@@ -3,13 +3,13 @@
 #include "ofMain.h"
 #include "Processing.NDI.Lib.h"
 
-class ofxNDIReceiver {
+class ofxNDIreceiver {
 public:
 	// Event fired when the sender list changes (new sender, removed sender, or renamed).
 	// The vector contains the current list of sender names.
 	ofEvent<std::vector<std::string>> onSenderListChanged;
-	ofxNDIReceiver();
-	~ofxNDIReceiver();
+	ofxNDIreceiver();
+	~ofxNDIreceiver();
 
 	// Initialize NDI. Call once in setup().
 	// Optionally specify a preferred sender name to auto-connect.

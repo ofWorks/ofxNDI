@@ -3,10 +3,10 @@
 #include "ofMain.h"
 #include "Processing.NDI.Lib.h"
 
-class ofxNDISender {
+class ofxNDIsender {
 public:
-	ofxNDISender();
-	~ofxNDISender();
+	ofxNDIsender();
+	~ofxNDIsender();
 
 	// Initialize NDI. Call once in setup().
 	bool setup(const std::string& senderName);
@@ -26,6 +26,9 @@ public:
 	// State
 	bool isInitialized() const;
 	std::string getName() const;
+
+	// NDI SDK version string (e.g. "NDI SDK 6.3.1")
+	std::string getNDIVersion() const;
 
 private:
 	const NDIlib_v6* ndiLib = nullptr;
