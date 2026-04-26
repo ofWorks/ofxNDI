@@ -1,4 +1,5 @@
 #include "ofxNDIsender.h"
+#include "ofxNDILoader.h"
 
 ofxNDIsender::ofxNDIsender() = default;
 
@@ -9,7 +10,7 @@ ofxNDIsender::~ofxNDIsender() {
 bool ofxNDIsender::setup(const std::string& senderName) {
 	if (initialized) return true;
 
-	ndiLib = NDIlib_v6_load();
+	ndiLib = ofxNDILoad();
 	if (!ndiLib) {
 		ofLogError("ofxNDIsender") << "Failed to load NDI library";
 		return false;

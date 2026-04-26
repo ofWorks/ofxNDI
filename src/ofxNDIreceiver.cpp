@@ -1,4 +1,5 @@
 #include "ofxNDIreceiver.h"
+#include "ofxNDILoader.h"
 
 ofxNDIreceiver::ofxNDIreceiver() = default;
 
@@ -9,7 +10,7 @@ ofxNDIreceiver::~ofxNDIreceiver() {
 bool ofxNDIreceiver::setup(const std::string& preferredSender) {
 	if (initialized) return true;
 
-	ndiLib = NDIlib_v6_load();
+	ndiLib = ofxNDILoad();
 	if (!ndiLib) {
 		ofLogError("ofxNDIreceiver") << "Failed to load NDI library";
 		return false;
@@ -140,14 +141,25 @@ void ofxNDIreceiver::update() {
 		unsigned char* dst = pixelBuffer.getData();
 
 		switch (videoFrame.FourCC) {
-			case NDIlib_FourCC_type_BGRA:
 			case NDIlib_FourCC_type_RGBA:
 				for (int y = 0; y < h; y++) {
 					memcpy(dst + y * w * 4, src + y * srcStride, w * 4);
 				}
 				break;
 
-			case NDIlib_FourCC_type_BGRX:
+			case NDIlib_FourCC_type_BGRA:
+				for (int y = 0; y < h; y++) {
+					unsigned char* srcRow = src + y * srcStride;
+					unsigned char* dstRow = dst + y * w * 4;
+					for (int x = 0; x < w; x++) {
+						dstRow[x * 4 + 0] = srcRow[x * 4 + 2]; // R <- B
+						dstRow[x * 4 + 1] = srcRow[x * 4 + 1]; // G <- G
+						dstRow[x * 4 + 2] = srcRow[x * 4 + 0]; // B <- R
+						dstRow[x * 4 + 3] = srcRow[x * 4 + 3]; // A <- A
+					}
+				}
+				break;
+
 			case NDIlib_FourCC_type_RGBX:
 				for (int y = 0; y < h; y++) {
 					unsigned char* srcRow = src + y * srcStride;
@@ -156,6 +168,19 @@ void ofxNDIreceiver::update() {
 						dstRow[x * 4 + 0] = srcRow[x * 4 + 0];
 						dstRow[x * 4 + 1] = srcRow[x * 4 + 1];
 						dstRow[x * 4 + 2] = srcRow[x * 4 + 2];
+						dstRow[x * 4 + 3] = 255;
+					}
+				}
+				break;
+
+			case NDIlib_FourCC_type_BGRX:
+				for (int y = 0; y < h; y++) {
+					unsigned char* srcRow = src + y * srcStride;
+					unsigned char* dstRow = dst + y * w * 4;
+					for (int x = 0; x < w; x++) {
+						dstRow[x * 4 + 0] = srcRow[x * 4 + 2]; // R <- B
+						dstRow[x * 4 + 1] = srcRow[x * 4 + 1]; // G <- G
+						dstRow[x * 4 + 2] = srcRow[x * 4 + 0]; // B <- R
 						dstRow[x * 4 + 3] = 255;
 					}
 				}
