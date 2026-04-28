@@ -3,6 +3,10 @@
 #if defined(_WIN32)
 #include <windows.h>
 #include <cstring> // for strlen, strncat
+#include <cstdio>  // for snprintf
+#if defined(_MSC_VER)
+#define snprintf _snprintf
+#endif
 #elif defined(__APPLE__)
 #include <dlfcn.h>
 #else // Linux
