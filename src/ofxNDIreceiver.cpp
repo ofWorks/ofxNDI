@@ -101,15 +101,32 @@ void ofxNDIreceiver::update() {
 		return;
 	}
 
+	// Drain everything queued and keep only the newest video frame. Passing nullptr for
+	// audio/metadata makes NDI discard them. Capturing a single frame per update() let
+	// the queue grow when the sender runs faster than the app or also sends audio.
 	NDIlib_video_frame_v2_t videoFrame = {};
-	NDIlib_audio_frame_v3_t audioFrame = {};
-	NDIlib_metadata_frame_t metadataFrame = {};
+	bool haveVideo = false;
+	for (int i = 0; i < 32; i++) {
+		NDIlib_video_frame_v2_t frame = {};
+		NDIlib_frame_type_e type = ndiLib->recv_capture_v3(receiver, &frame, nullptr, nullptr, 0);
+		if (type == NDIlib_frame_type_video) {
+			if (haveVideo) {
+				ndiLib->recv_free_video_v2(receiver, &videoFrame);
+			}
+			videoFrame = frame;
+			haveVideo = true;
+		} else if (type == NDIlib_frame_type_none || type == NDIlib_frame_type_error) {
+			break;
+		}
+		// status_change / source_change: keep draining
+	}
 
-	NDIlib_frame_type_e frameType = ndiLib->recv_capture_v3(
-		receiver, &videoFrame, &audioFrame, &metadataFrame, 0
-	);
+	if (haveVideo && !videoFrame.p_data) {
+		ndiLib->recv_free_video_v2(receiver, &videoFrame);
+		haveVideo = false;
+	}
 
-	if (frameType == NDIlib_frame_type_video && videoFrame.p_data) {
+	if (haveVideo) {
 		connected = true;
 
 		int w = videoFrame.xres;
@@ -252,16 +269,6 @@ void ofxNDIreceiver::update() {
 
 		texture.loadData(pixelBuffer);
 		ndiLib->recv_free_video_v2(receiver, &videoFrame);
-
-	} else if (frameType == NDIlib_frame_type_none) {
-		// No frame this cycle
-	}
-
-	if (frameType == NDIlib_frame_type_audio && audioFrame.p_data) {
-		ndiLib->recv_free_audio_v3(receiver, &audioFrame);
-	}
-	if (frameType == NDIlib_frame_type_metadata && metadataFrame.p_data) {
-		ndiLib->recv_free_metadata(receiver, &metadataFrame);
 	}
 }
 
@@ -336,15 +343,18 @@ bool ofxNDIreceiver::connect(size_t index) {
 
 	// Persist the name — NDI may hold the pointer
 	connectedSourceName = name;
-	currentSenderName = name;
 
 	// Create source AFTER persisting the name and BEFORE releaseReceiver can clear it
 	NDIlib_source_t source;
 	source.p_ndi_name = connectedSourceName.c_str();
 	source.p_url_address = nullptr;
 
+	// createReceiver() calls releaseReceiver(), which clears currentSenderName,
+	// so it must be set only after. Otherwise the "already connected" check above
+	// never matches and every connect() destroys and recreates the receiver.
 	bool ok = createReceiver(source);
 	if (ok) {
+		currentSenderName = name;
 		pendingSenderName.clear();
 	} else {
 		connectedSourceName.clear();
