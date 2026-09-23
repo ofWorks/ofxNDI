@@ -1,6 +1,20 @@
 #include "ofxNDIreceiver.h"
 #include "ofxNDILoader.h"
 
+// TEMPORARY crash hunting
+static void ndiDbg(const std::string & msg) {
+	if (ofxNDIreceiver::debug) {
+		std::cout << "[ndi f" << ofGetFrameNum() << "] " << msg << std::endl;
+	}
+}
+
+// per-frame steps only during the first frames, so the log stays readable
+static void ndiDbgFrame(const std::string & msg) {
+	if (ofGetFrameNum() < 5) {
+		ndiDbg(msg);
+	}
+}
+
 ofxNDIreceiver::ofxNDIreceiver() = default;
 
 ofxNDIreceiver::~ofxNDIreceiver() {
@@ -10,12 +24,14 @@ ofxNDIreceiver::~ofxNDIreceiver() {
 bool ofxNDIreceiver::setup(const std::string& preferredSender) {
 	if (initialized) return true;
 
+	ndiDbg("setup: load library");
 	ndiLib = ofxNDILoad();
 	if (!ndiLib) {
 		ofLogError("ofxNDIreceiver") << "Failed to load NDI library";
 		return false;
 	}
 
+	ndiDbg("setup: initialize");
 	if (!ndiLib->initialize()) {
 		ofLogError("ofxNDIreceiver") << "NDI initialization failed (CPU may not support SSE4.2)";
 		ndiLib = nullptr;
@@ -23,6 +39,7 @@ bool ofxNDIreceiver::setup(const std::string& preferredSender) {
 	}
 
 	NDIlib_find_create_t findCreate = {true, nullptr, nullptr};
+	ndiDbg("setup: find_create_v2");
 	finder = ndiLib->find_create_v2(&findCreate);
 	if (!finder) {
 		ofLogError("ofxNDIreceiver") << "Failed to create NDI finder";
@@ -34,7 +51,9 @@ bool ofxNDIreceiver::setup(const std::string& preferredSender) {
 	initialized = true;
 	pendingSenderName = preferredSender;
 
+	ndiDbg("setup: refreshSenders");
 	refreshSenders();
+	ndiDbg("setup: senders found " + ofToString(senderNames.size()));
 
 	if (!senderNames.empty()) {
 		int idx = 0;
@@ -49,10 +68,12 @@ bool ofxNDIreceiver::setup(const std::string& preferredSender) {
 		connect(idx);
 	}
 
+	ndiDbg("setup: done");
 	return true;
 }
 
 void ofxNDIreceiver::close() {
+	ndiDbg("close");
 	releaseReceiver();
 
 	if (ndiLib && finder) {
@@ -80,6 +101,7 @@ void ofxNDIreceiver::close() {
 void ofxNDIreceiver::update() {
 	if (!initialized) return;
 
+	ndiDbgFrame("update: refreshSenders");
 	refreshSenders();
 
 	// Handle pending sender name (set by connect() when name not yet found)
@@ -94,6 +116,7 @@ void ofxNDIreceiver::update() {
 
 	// Auto-connect to first sender if nothing connected
 	if (!receiver && !senderNames.empty()) {
+		ndiDbg("update: auto-connect to sender 0");
 		connect(0);
 	}
 
@@ -108,7 +131,9 @@ void ofxNDIreceiver::update() {
 	bool haveVideo = false;
 	for (int i = 0; i < 32; i++) {
 		NDIlib_video_frame_v2_t frame = {};
+		ndiDbgFrame("update: recv_capture_v3");
 		NDIlib_frame_type_e type = ndiLib->recv_capture_v3(receiver, &frame, nullptr, nullptr, 0);
+		ndiDbgFrame("update: recv_capture_v3 type=" + ofToString((int)type));
 		if (type == NDIlib_frame_type_video) {
 			if (haveVideo) {
 				ndiLib->recv_free_video_v2(receiver, &videoFrame);
@@ -128,11 +153,13 @@ void ofxNDIreceiver::update() {
 
 	if (haveVideo) {
 		connected = true;
+		ndiDbgFrame("update: video " + ofToString(videoFrame.xres) + "x" + ofToString(videoFrame.yres) + " stride=" + ofToString(videoFrame.line_stride_in_bytes) + " fourcc=" + ofToString((int)videoFrame.FourCC) + " data=" + ofToString((void *)videoFrame.p_data));
 
 		int w = videoFrame.xres;
 		int h = videoFrame.yres;
 
 		if ((int)pixelBuffer.getWidth() != w || (int)pixelBuffer.getHeight() != h) {
+			ndiDbg("update: allocate " + ofToString(w) + "x" + ofToString(h));
 			pixelBuffer.allocate(w, h, OF_PIXELS_RGBA);
 			texture.allocate(w, h, GL_RGBA);
 		}
@@ -267,8 +294,11 @@ void ofxNDIreceiver::update() {
 			}
 		}
 
+		ndiDbgFrame("update: texture.loadData");
 		texture.loadData(pixelBuffer);
+		ndiDbgFrame("update: recv_free_video_v2");
 		ndiLib->recv_free_video_v2(receiver, &videoFrame);
+		ndiDbgFrame("update: frame done");
 	}
 }
 
@@ -335,6 +365,7 @@ bool ofxNDIreceiver::connect(size_t index) {
 	if (!initialized || index >= senderNames.size()) return false;
 
 	std::string name = senderNames[index];
+	ndiDbg("connect: index " + ofToString(index) + " name \"" + name + "\" current \"" + currentSenderName + "\" receiver=" + ofToString((void *)receiver));
 
 	// If already connected to this sender, nothing to do
 	if (name == currentSenderName && receiver) {
@@ -387,7 +418,9 @@ void ofxNDIreceiver::refreshSenders() {
 	lastRefreshTime = now;
 
 	uint32_t nSources = 0;
+	ndiDbgFrame("refreshSenders: find_get_current_sources");
 	const NDIlib_source_t* sources = ndiLib->find_get_current_sources(finder, &nSources);
+	ndiDbgFrame("refreshSenders: nSources " + ofToString(nSources));
 
 	bool changed = (nSources != lastSourceCount);
 
@@ -420,7 +453,9 @@ void ofxNDIreceiver::refreshSenders() {
 			ofLogNotice("ofxNDIreceiver") << "  [" << i << "] " << senderNames[i];
 		}
 
+		ndiDbg("refreshSenders: list changed, " + ofToString(senderNames.size()) + " sender(s), notifying");
 		ofNotifyEvent(onSenderListChanged, senderNames, this);
+		ndiDbg("refreshSenders: notify done");
 	}
 }
 
@@ -433,20 +468,25 @@ bool ofxNDIreceiver::createReceiver(const NDIlib_source_t& source) {
 	recvCreate.bandwidth = NDIlib_recv_bandwidth_highest;
 	recvCreate.allow_video_fields = false;
 
+	ndiDbg(std::string("createReceiver: recv_create_v3 ") + (source.p_ndi_name ? source.p_ndi_name : "(null)"));
 	receiver = ndiLib->recv_create_v3(&recvCreate);
+	ndiDbg("createReceiver: receiver=" + ofToString((void *)receiver));
 	if (!receiver) {
 		ofLogError("ofxNDIreceiver") << "Failed to create receiver for: " << (source.p_ndi_name ? source.p_ndi_name : "(null)");
 		return false;
 	}
 
 	// Verify connection
+	ndiDbg("createReceiver: recv_get_no_connections");
 	int nConnections = ndiLib->recv_get_no_connections(receiver);
 	if (nConnections == 0) {
 		ofLogWarning("ofxNDIreceiver") << "Receiver created but not connected to: " << (source.p_ndi_name ? source.p_ndi_name : "(null)");
 	}
 
 	NDIlib_tally_t tally = {true, false};
+	ndiDbg("createReceiver: recv_set_tally");
 	ndiLib->recv_set_tally(receiver, &tally);
+	ndiDbg("createReceiver: done");
 
 	connected = false;
 	lastReceivedFourCC = (NDIlib_FourCC_video_type_e)0;
@@ -458,6 +498,7 @@ bool ofxNDIreceiver::createReceiver(const NDIlib_source_t& source) {
 
 void ofxNDIreceiver::releaseReceiver() {
 	if (ndiLib && receiver) {
+		ndiDbg("releaseReceiver: recv_destroy");
 		ndiLib->recv_destroy(receiver);
 		receiver = nullptr;
 	}

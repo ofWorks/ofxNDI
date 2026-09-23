@@ -8,6 +8,9 @@ public:
 	// Event fired when the sender list changes (new sender, removed sender, or renamed).
 	// The vector contains the current list of sender names.
 	ofEvent<std::vector<std::string>> onSenderListChanged;
+
+	// TEMPORARY crash hunting: print every NDI call step (flushed) when true.
+	static inline bool debug = false;
 	ofxNDIreceiver();
 	~ofxNDIreceiver();
 
